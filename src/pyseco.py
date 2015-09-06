@@ -9,12 +9,30 @@ from xmlrpc.client import Fault
 
 from gbxremote import GBX2xmlrpc
 
+class Player():
+    def __init__(self, dict):
+        self.login = dict["Login"]
+        self.nick_name = dict["NickName"]
+        self.is_spectator = dict["IsSpectator"]
+        self.player_id = dict["PlayerId"]
+        self.is_in_official_mode = dict["IsInOfficialMode"]
+        self.ladder_ranking = dict["LadderRanking"]
+
+    def modify(self, dict):
+        self.login = dict["Login"]
+        self.nick_name = dict["NickName"]
+        self.is_spectator = dict["IsSpectator"]
+        self.player_id = dict["PlayerId"]
+        self.is_in_official_mode = dict["IsInOfficialMode"]
+        self.ladder_ranking = dict["LadderRanking"]
+
 class PySECO(GBX2xmlrpc):
     def __init__(self, config_file):
         GBX2xmlrpc.__init__(self)
         self.callback_listeners = dict()
         self.listeners = dict()
         self.responses = dict()
+        self.players = dict()
 
         self.load_config(config_file)
         try:
@@ -42,6 +60,11 @@ class PySECO(GBX2xmlrpc):
 
         self.initialize()
         self.console_log("Setup complete")
+
+    def get_player(self, login):
+        if login not in self.players:
+            return None
+        return self.players[login]
 
     def initialize(self):
         self.send((),"SendHideManialinkPage")

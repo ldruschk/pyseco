@@ -79,16 +79,27 @@ class PySECO_DB():
         else:
             return data[0]
 
-    def add_record(self, mid, pid, time):
-        try:
-            self.cursor.execute("INSERT INTO record (mid,pid,time) VALUES (%s,%s,%s)",(mid,pid,time))
-            self.conn.commit()
-        except pymysql.MySQLError as e:
-            raise DBException("Could not create record for %d on %d" % (pid,mid))
+    # returns 0 if new record was created
+    # returns previous record else
+    def handle_record(self,mid,login,time):
+        self.cursor.execute("SELECT id FROM player where login = %s LIMIT 1",(login))
+        data = self.cursor.fetchone()
+        if data is None:
+            raise DBException("User %s not found" % login)
+        pid = data[0]
 
-    def update_record(self, mid, pid, time):
-        try:
-            self.cursor.execute("UPDATE record SET time = %s WHERE mid = %s AND pid = %s",(time,mid,pid))
-            self.conn.commit()
-        except pymysql.MySQLError as e:
-            raise DBException("Could not update record for %d on %d" % (pid,mid))
+        retval = -1
+
+        self.cursor.execute("SELECT time FROM record WHERE mid = %s AND pid = %s LIMIT 1", (mid,pid))
+        data = self.cursor.fetchone()
+        if data is None:
+            self.cursor.execute("INSERT INTO record (mid,pid,time) VALUES (%s,%s,%s)",(mid,pid,time))
+            retval = 0
+        else:
+            if time < data[0]:
+                self.cursor.execute("UPDATE record SET TIME = %s WHERE mid = %s AND pid = %s LIMIT 1",(time,mid,pid))
+                retval = data[0]
+            else:
+                retval = time
+        self.conn.commit()
+        return retval

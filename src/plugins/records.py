@@ -19,7 +19,7 @@ class records(pyseco_plugin):
             if value[0][2] == 0: # Player only restarted, ignore
                 return
             ranking = self.pyseco.query((value[0][1],),"GetCurrentRankingForLogin")
-            self.process_finish(ranking[0][0][0])
+            self.process_finish(value[0][2],ranking[0][0][0])
         if value[1] == "TrackMania.BeginChallenge":
             self.new_map(value[0][0])
 
@@ -32,17 +32,19 @@ class records(pyseco_plugin):
         if record:
             self.records[login] = record
 
-    def process_finish(self, ranking):
+    def process_finish(self, newtime,ranking):
         login = ranking["Login"]
         player = self.pyseco.get_player(login)
         time = ranking["BestTime"]
-        if login not in self.records: # Make sure that the player does not have a record yet
-            self.add_player(login)
-        if login not in self.records:
-            self.pyseco.db.add_record(self.map_id,player.db_id,time)
-            self.add_player(login)
-        elif time < self.records[login]:
-            self.pyseco.db.update_record(self.map_id,player.db_id,time)
+        if newtime > time:
+            return
+        prev = self.pyseco.db.handle_record(self.map_id, login, time)
+        if prev == 0:
+            self.pyseco.send_chat_message("Player %s claimed record with: %d" % (player.nick_name, time))
+        elif time < prev:
+            self.pyseco.send_chat_message("Player %s improved record with: %d (-%d)" % (player.nick_name, time, prev-time))
+        elif time == prev:
+            self.pyseco.send_chat_message("Player %s equaled his record with: %d" % (player.nick_name, prev))
 
     def new_map(self, value):
         self.map_id = self.pyseco.db.add_map(value["UId"],value["Name"],value["Author"],value["NbCheckpoints"],value["AuthorTime"])

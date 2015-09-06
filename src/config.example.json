@@ -1,0 +1,9 @@
+{"server":{
+    "ip":"localhost",
+    "port":5000
+    },
+"authorization":{
+    "name":"SuperAdmin",
+    "password":"SuperAdmin"
+    },
+"xmlrpc_enableCallbacks":true}

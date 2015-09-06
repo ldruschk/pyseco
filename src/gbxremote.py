@@ -1,6 +1,7 @@
 #import xmlrpc.client
 import socket
 import threading
+import xml
 from xmlrpc.client import loads, dumps, Fault
 
 class Request():
@@ -22,19 +23,33 @@ class GBX2xmlrpc():
         self.handler = 0x80000000
 
     def connect(self, server_ip, server_port):
-        self.server_ip = server_ip
-        self.server_port = server_port
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.connect((self.server_ip,self.server_port))
+        try:
+            self.server_ip = server_ip
+            self.server_port = server_port
+            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.socket.settimeout(10)
+            self.socket.connect((self.server_ip,self.server_port))
+            self.socket.settimeout(None)
 
-        four = self.socket.recv(4)
-        protocol = self.socket.recv(11)
+            four = self.socket.recv(4)
+            protocol = self.socket.recv(11)
 
-        if protocol.decode() != "GBXRemote 2":
-            print("Not a TM Server")
+            if protocol.decode() != "GBXRemote 2":
+                print("Not a TM Server")
 
-        self.thread = threading.Thread(target=self.listen)
-        self.thread.start()
+            self.thread = threading.Thread(target=self.listen)
+            self.thread.start()
+
+            return True
+        # Connection to host timed out
+        except socket.timeout:
+            return False
+        # Invalid host
+        except socket.gaierror:
+            return False
+        # Invalid Port
+        except ConnectionRefusedError:
+            return False
 
     def send(self, params, methodName):
         brequest = dumps(params,methodname=methodName).encode()
@@ -58,9 +73,20 @@ class GBX2xmlrpc():
                     self.handle((data, methodName), hndl)
                 except Fault as e:
                     self.handle(e, hndl)
+                except xml.parsers.expat.ExpatError:
+                    print("INVALID XML")
+            # Socket closed
+            except OSError:
+                break
             except KeyboardInterrupt:
                 break
-        self.socket.close()
+        self.shutdown()
+
+    def shutdown(self):
+        try:
+            self.socket.close()
+        except Exception as e:
+            print(type(e))
 
     def handle(self, input, handle):
         pass

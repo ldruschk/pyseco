@@ -1,4 +1,5 @@
 from plugins.pyseco_plugin import pyseco_plugin
+from xml.sax.saxutils import escape
 
 class livecps(pyseco_plugin):
     # str: manialink id
@@ -41,18 +42,20 @@ class livecps(pyseco_plugin):
         player = value[1]
         time = value[2]
         cp = value[4]
+        if cp == self.nb_checkpoints - 1: # Dont show the finish time
+            return
         if cp not in self.checkpoint_recs:
             self.checkpoint_recs[cp] = {"player":player,"time":time}
-            self.update_checkpoint_manialink(cp, time, player)
+            self.update_checkpoint_manialink(cp, time, self.pyseco.get_player(player).nick_name)
         elif time < self.checkpoint_recs[cp]["time"]:
             self.checkpoint_recs[cp] = {"player":player,"time":time}
-            self.update_checkpoint_manialink(cp, time, player)
+            self.update_checkpoint_manialink(cp, time, self.pyseco.get_player(player).nick_name)
         #self.pyseco.send_chat_message(str(self.checkpoint_recs))
 
     def update_checkpoint_manialink(self, num_cp, time, name):
         row = int(num_cp / 6)
         column = num_cp % 6
-        xml = self.manialink_str % ("livecps%d" % num_cp, -48.5 + column*16, 45 - row*4, 0, 15, 3, "BgsPlayerCard", "BgCard", 0.75, -0.75, 0, 10.5, 1.5, 1.5, "$fffCP%d: %s" % (num_cp+1, name), 11.5, -0.75, 0, 2.75, 1.5, 1.5, "$0$fff| %d.%03d" % (int(time/1000), time % 1000))
+        xml = self.manialink_str % ("livecps%d" % num_cp, -48.5 + column*16, 45 - row*4, 0, 15, 3, "BgsPlayerCard", "BgCard", 0.75, -0.75, 0, 10.5, 1.5, 1.5, "$fffCP%d: %s" % (num_cp+1, name.replace("'","&apos;")), 11.5, -0.75, 0, 2.75, 1.5, 1.5, "$0$fff| %d.%03d" % (int(time/1000), time % 1000))
         self.pyseco.query((xml,0,False),"SendDisplayManialinkPage")
 
     def new_map(self, value):

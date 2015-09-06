@@ -4,6 +4,7 @@ import datetime
 import importlib
 import copy
 
+from db import PySECO_DB, DBException
 from threading import Thread, Event
 from xmlrpc.client import Fault
 
@@ -42,6 +43,13 @@ class PySECO(GBX2xmlrpc):
                 self.error_log("Failed to conect to %s:%d" % (server_ip, server_port), True)
             self.console_log("Connected to %s:%d" % (server_ip, server_port))
 
+            mysql_host = self.config["mysql"]["host"]
+            mysql_login = self.config["mysql"]["login"]
+            mysql_password = self.config["mysql"]["password"]
+            mysql_database = self.config["mysql"]["database"]
+            if not self.connect_db(mysql_host, mysql_login, mysql_password, mysql_database):
+                self.error_log("Failed to connect to database", True)
+
             if not self.auth(self.config["authorization"]["name"], self.config["authorization"]["password"]):
                 self.error_log("Failed to authenticate - Continuing without authorization")
             # Enable callbacks unless explicitly set to false
@@ -60,6 +68,14 @@ class PySECO(GBX2xmlrpc):
 
         self.initialize()
         self.console_log("Setup complete")
+
+    def connect_db(self, host, login, password, database):
+        try:
+            self.db = PySECO_DB(host,login,password,database)
+            return True
+        except Exception as e:
+            self.error_log("[DB] %s" % str(e))
+            return False
 
     def get_player(self, login):
         if login not in self.players:

@@ -40,6 +40,15 @@ class PySECO(GBX2xmlrpc):
             self.shutdown()
             sys.exit(1)
 
+        self.initialize()
+        self.console_log("Setup complete")
+
+    def initialize(self):
+        self.send((),"SendHideManialinkPage")
+        system_info = self.query((),"GetSystemInfo")
+        self.server_login = system_info[0][0]['ServerLogin']
+        server_options = self.query((),"GetServerOptions")
+
     def send_chat_message(self, message):
         self.send((message,),"ChatSendServerMessage")
 
@@ -139,7 +148,8 @@ if __name__ == "__main__":
         try:
             text = input()
             #print(pyseco.query((300,0),text))
-            pyseco.send((),text)
+            #pyseco.send((),text)
+            print(pyseco.query((),text))
             #pygbx.send(("the_legend_of_master",),text)
             #pygbx.send((text,),"ChatSendServerMessage")
         except KeyboardInterrupt:

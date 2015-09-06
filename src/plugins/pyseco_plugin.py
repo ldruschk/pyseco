@@ -20,3 +20,6 @@ class pyseco_plugin():
     def callback_notify(self, value):
         self.callback_queue.put(value)
         self.event.set()
+
+    def process_callback(self, value):
+        raise NotImplementedError()

@@ -11,13 +11,16 @@ from xmlrpc.client import Fault
 from gbxremote import GBX2xmlrpc
 
 class Player():
-    def __init__(self, dict):
+    def __init__(self, dict, pyseco):
+        self.pyseco = pyseco
         self.login = dict["Login"]
         self.nick_name = dict["NickName"]
         self.is_spectator = dict["IsSpectator"]
         self.player_id = dict["PlayerId"]
         self.is_in_official_mode = dict["IsInOfficialMode"]
         self.ladder_ranking = dict["LadderRanking"]
+
+        self.db_id = self.pyseco.db.add_player(self.login, self.nick_name)
 
     def modify(self, dict):
         self.login = dict["Login"]
@@ -177,6 +180,13 @@ class PySECO(GBX2xmlrpc):
 
     def console_log(self, string):
         print(("[%s] " % datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")) + string)
+
+    def shutdown(self):
+        try:
+            self.db.close()
+        except Exception as e:
+            pass
+        GBX2xmlrpc.shutdown(self)
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:

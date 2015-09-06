@@ -27,7 +27,7 @@ class playermanager(pyseco_plugin):
 
     def player_add(self, player_info):
         if player_info["Login"] not in self.pyseco.players:
-            self.pyseco.players[player_info["Login"]] = Player(player_info)
+            self.pyseco.players[player_info["Login"]] = Player(player_info,self.pyseco)
 
     def player_modify(self, player_info):
         if player_info["Login"] in self.pyseco.players:

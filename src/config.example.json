@@ -6,4 +6,16 @@
     "name":"SuperAdmin",
     "password":"SuperAdmin"
     },
-"xmlrpc_enableCallbacks":true}
+"xmlrpc_enableCallbacks":true,
+"plugins":[
+    {"name":"playermanager","settings":{}},
+    {"name":"livecps","settings":{}},
+    {"name":"manialink","settings":{}},
+    {"name":"records","settings":{}}
+],
+"mysql":{
+    "host":"localhost",
+    "login":"pyseco",
+    "password":"password",
+    "database":"pyseco"
+    }}

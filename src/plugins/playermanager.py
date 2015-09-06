@@ -21,6 +21,9 @@ class playermanager(pyseco_plugin):
         if value[1] == "TracMania.PlayerDisconnect":
             player_login = value[0][0]
             self.player_remove(player_login)
+        if value[1] == "TrackMania.PlayerInfoChanged":
+            player_info = self.pyseco.query((value[0][0]["Login"],),"GetPlayerInfo")
+            self.player_modify(player_info[0][0])
 
     def player_add(self, player_info):
         if player_info["Login"] not in self.pyseco.players:

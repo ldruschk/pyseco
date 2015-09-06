@@ -2,7 +2,6 @@
 import socket
 import threading
 from xmlrpc.client import loads, dumps, Fault
-from lxml import etree
 
 class Request():
     def __init__(self, methodName, params):

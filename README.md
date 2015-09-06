@@ -1,2 +1,2 @@
 # Dependencies
-- lxml
+- Python3

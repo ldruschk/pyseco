@@ -33,21 +33,18 @@ class GBX2xmlrpc():
         if protocol.decode() != "GBXRemote 2":
             print("Not a TM Server")
 
-        #print("Starting listener Thread")
-
         self.thread = threading.Thread(target=self.listen)
         self.thread.start()
 
     def send(self, params, methodName):
         brequest = dumps(params,methodname=methodName).encode()
-        #print(brequest)
         blength = len(brequest).to_bytes(4,byteorder='little')
-        #print(blength)
-        bhandler = self.handler.to_bytes(4,byteorder='little')
-        #print(self.handler)
+        handler = self.handler
         self.handler += 1
+        bhandler = handler.to_bytes(4,byteorder='little')
 
         self.socket.send(blength + bhandler + brequest)
+        return handler
 
     def listen(self):
         while 1:
@@ -55,61 +52,15 @@ class GBX2xmlrpc():
                 size = int.from_bytes(self.socket.recv(4),byteorder="little")
                 hndl = int.from_bytes(self.socket.recv(4),byteorder="little")
                 answer = self.socket.recv(size)
-                #print(answer.decode())
 
                 try:
                     (data, methodName) = loads(answer,use_builtin_types=True)
-                    self.handle(data, methodName = methodName, handle = hndl)
+                    self.handle((data, methodName), hndl)
                 except Fault as e:
-                    self.handle(e)
+                    self.handle(e, hndl)
             except KeyboardInterrupt:
                 break
         self.socket.close()
 
-    def handle(self, input):
+    def handle(self, input, handle):
         pass
-
-    # 32-bit little-endian
-    def toInt(self, val):
-        return (val[0] & 0xff) | ((val[1] & 0xff) << 8) | ((val[2] & 0xff) << 16) | ((val[3] & 0xff) << 24)
-
-class GBXRemote(GBX2xmlrpc):
-    def __init__(self, server_ip, server_port):
-        GBX2xmlrpc.__init__(self)
-        self.connect(server_ip, server_port)
-
-    def auth(self, username, password):
-        self.send((username,password),"Authenticate")
-
-    def enableCallbacks(self):
-        self.send((True,),"EnableCallbacks")
-
-    def handle(self, value, methodName = "", handle = -1):
-        if isinstance(value, Fault):
-            print("XML-RPC error")
-            print(value.faultCode)
-            print(value.faultString)
-            return
-        print(methodName)
-        #print(handle)
-        print(value)
-
-
-
-
-username = "SuperAdmin"
-password = "SuperAdmin"
-server_ip = "192.168.178.156"
-server_port = 5000
-
-if __name__ == "__main__":
-    pygbx = GBXRemote(server_ip, server_port)
-    pygbx.auth(username,password)
-    pygbx.enableCallbacks()
-    while 1:
-        try:
-            text = input()
-            pygbx.send(("the_legend_of_master",),text)
-            #pygbx.send((text,),"ChatSendServerMessage")
-        except KeyboardInterrupt:
-            break

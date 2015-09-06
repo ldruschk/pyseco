@@ -37,7 +37,7 @@ class GBX2xmlrpc():
             if protocol.decode() != "GBXRemote 2":
                 print("Not a TM Server")
 
-            self.thread = threading.Thread(target=self.listen)
+            self.thread = threading.Thread(target=self.listen, daemon = True)
             self.thread.start()
 
             return True

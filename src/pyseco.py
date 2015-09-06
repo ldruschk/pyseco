@@ -1,6 +1,8 @@
 import sys
 import json
 import datetime
+import importlib
+import copy
 
 from threading import Thread, Event
 from xmlrpc.client import Fault
@@ -24,12 +26,22 @@ class PySECO(GBX2xmlrpc):
 
             if not self.auth(self.config["authorization"]["name"], self.config["authorization"]["password"]):
                 self.error_log("Failed to authenticate - Continuing without authorization")
-            if self.config["xmlrpc_enableCallbacks"]:
+            # Enable callbacks unless explicitly set to false
+            try:
+                if self.config["xmlrpc_enableCallbacks"]:
+                    self.enable_callbacks()
+            except KeyError:
                 self.enable_callbacks()
+
+            for plugin in self.config["plugins"]:
+                self.enable_plugin(plugin["name"],plugin["settings"])
         except KeyError as e:
             print("Setting not found: %s" % str(e))
             self.shutdown()
             sys.exit(1)
+
+    def send_chat_message(self, message):
+        self.send((message,),"ChatSendServerMessage")
 
     def load_config(self, config_file):
         try:
@@ -57,15 +69,24 @@ class PySECO(GBX2xmlrpc):
 
         return value
 
+    def enable_plugin(self, name, settings):
+        try:
+            i = importlib.import_module("plugins.%s" % name)
+            constructor = getattr(i,name)
+            constructor(self)
+        except Exception as e:
+            print(str(e))
+            print(type(e))
+
     def add_callback_listener(self, methodName, listener):
         if not methodName in self.callback_listeners:
             self.callback_listeners[methodName] = []
-        self.callback_listeners[methodName].add(listener)
+        self.callback_listeners[methodName].append(listener)
 
     def notify_callback_listeners(self, value):
         if value[1] in self.callback_listeners:
             for listener in self.callback_listeners[value[1]]:
-                listener.callback_notify(value)
+                listener.callback_notify(copy.deepcopy(value))
 
     def auth(self, username, password):
         out = self.query((username,password),"Authenticate")
@@ -117,8 +138,8 @@ if __name__ == "__main__":
     while 1:
         try:
             text = input()
-            print(pyseco.query((300,0),text))
-            #pygbx.send((),text)
+            #print(pyseco.query((300,0),text))
+            pyseco.send((),text)
             #pygbx.send(("the_legend_of_master",),text)
             #pygbx.send((text,),"ChatSendServerMessage")
         except KeyboardInterrupt:

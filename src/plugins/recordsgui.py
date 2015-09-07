@@ -58,7 +58,7 @@ class recordsgui(pyseco_plugin):
                 time.sleep(1)
             for login,player in self.pyseco.players.items():
                 ranking = self.pyseco.db.get_record_list(self.map_id, login)
-                xml = self.generate_local_xml(login,player.nick_name,ranking)
+                xml = self.generate_local_xml(login,player.get_nick_name(),ranking)
                 self.pyseco.send((login,xml,0,False),"SendDisplayManialinkPageToLogin")
             last_update = int(time.time())
 
@@ -90,7 +90,6 @@ class recordsgui(pyseco_plugin):
                 5.5,0,0,7,1,1,name.replace("'","&apos;"))
             i += 1
         if not has_rec:
-            player_name = player_name.decode("unicode_escape")
             entry_xml += self.local_records_entry_xml % (0.5, -2-i*1.5,0,
                 0,0,0,1.5,1,1,"$f08--.",
                 2,0,0,3,1,1,"--.---",

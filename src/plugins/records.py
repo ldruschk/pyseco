@@ -35,6 +35,7 @@ class records(pyseco_plugin):
             self.records[login] = record'''
 
     def process_finish(self, newtime,ranking):
+        print(newtime,ranking)
         login = ranking["Login"]
         player = self.pyseco.get_player(login)
         rec_time = ranking["BestTime"]
@@ -42,11 +43,11 @@ class records(pyseco_plugin):
             return
         prev = self.pyseco.db.handle_record(self.map_id, login, rec_time, int(time.time()))
         if prev == 0:
-            self.pyseco.send_chat_message("Player %s claimed record with: %d" % (player.nick_name, rec_time))
+            self.pyseco.send_chat_message("Player %s claimed record with: %d" % (player.get_nick_name(), rec_time))
         elif rec_time < prev:
-            self.pyseco.send_chat_message("Player %s improved record with: %d (-%d)" % (player.nick_name, rec_time, prev-rec_time))
+            self.pyseco.send_chat_message("Player %s improved record with: %d (-%d)" % (player.get_nick_name(), rec_time, prev-rec_time))
         elif rec_time == prev:
-            self.pyseco.send_chat_message("Player %s equaled his record with: %d" % (player.nick_name, prev))
+            self.pyseco.send_chat_message("Player %s equaled his record with: %d" % (player.get_nick_name(), prev))
 
     def new_map(self, value):
         self.map_id = self.pyseco.db.add_map(value["UId"],value["Name"],value["Author"],value["NbCheckpoints"],value["AuthorTime"])

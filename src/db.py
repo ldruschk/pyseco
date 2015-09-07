@@ -1,5 +1,6 @@
 import pymysql
 import warnings
+import codecs
 
 class DBException(Exception):
     def __init__(self):
@@ -121,8 +122,13 @@ class PySECO_DB():
         WHERE (x.count = 1 AND rank >= LEAST(GREATEST(4,(SELECT COUNT(*) FROM record WHERE record.mid = %s)-10),200-10,GREATEST(x.target_rank-5 , 4)) AND rank <= LEAST(GREATEST(4,(SELECT COUNT(*) FROM record WHERE record.mid = %s)),200,GREATEST(x.target_rank-5,4)+10))
             OR (x.count != 1 AND rank >= GREATEST(4,LEAST(200,(SELECT COUNT(*) FROM record WHERE record.mid = %s))-9)));""", (mid, mid, mid, login, mid, mid, mid))
         data = self.cursor.fetchall()
+        out = []
 
-        return data
+        for element in data:
+            out.append(element[:3] + (element[3].encode().decode("unicode_escape"),))
+
+
+        return out
 
     # returns 0 if new record was created
     # returns previous record else
@@ -133,7 +139,7 @@ class PySECO_DB():
         self.cursor.execute("SELECT time,id FROM record,player WHERE mid = %s AND pid = player.id and login = %s LIMIT 1", (mid,login))
         data = self.cursor.fetchone()
         if data is None:
-            self.cursor.execute("INSERT INTO record (mid,pid,time,timestamp) VALUES (%s,(SELECT id FROM player WHERE login = %s LIMIT 1),%s,%s)",(mid,data[1],time,timestamp))
+            self.cursor.execute("INSERT INTO record (mid,pid,time,timestamp) VALUES (%s,(SELECT id FROM player WHERE login = %s LIMIT 1),%s,%s)",(mid,login,time,timestamp))
             retval = 0
         else:
             if time < data[0]:

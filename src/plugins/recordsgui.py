@@ -90,6 +90,7 @@ class recordsgui(pyseco_plugin):
                 5.5,0,0,7,1,1,name.replace("'","&apos;"))
             i += 1
         if not has_rec:
+            player_name = player_name.decode("unicode_escape")
             entry_xml += self.local_records_entry_xml % (0.5, -2-i*1.5,0,
                 0,0,0,1.5,1,1,"$f08--.",
                 2,0,0,3,1,1,"--.---",

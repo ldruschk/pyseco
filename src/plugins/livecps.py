@@ -46,10 +46,10 @@ class livecps(pyseco_plugin):
             return
         if cp not in self.checkpoint_recs:
             self.checkpoint_recs[cp] = {"player":player,"time":time}
-            self.update_checkpoint_manialink(cp, time, self.pyseco.get_player(player).nick_name)
+            self.update_checkpoint_manialink(cp, time, self.pyseco.get_player(player).get_nick_name())
         elif time < self.checkpoint_recs[cp]["time"]:
             self.checkpoint_recs[cp] = {"player":player,"time":time}
-            self.update_checkpoint_manialink(cp, time, self.pyseco.get_player(player).nick_name)
+            self.update_checkpoint_manialink(cp, time, self.pyseco.get_player(player).get_nick_name())
         #self.pyseco.send_chat_message(str(self.checkpoint_recs))
 
     def update_checkpoint_manialink(self, num_cp, time, name):

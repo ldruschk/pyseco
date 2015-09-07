@@ -14,7 +14,7 @@ class Player():
     def __init__(self, dict, pyseco):
         self.pyseco = pyseco
         self.login = dict["Login"]
-        self.nick_name = dict["NickName"]
+        self.nick_name = dict["NickName"].encode("unicode_escape")
         self.is_spectator = dict["IsSpectator"]
         self.player_id = dict["PlayerId"]
         self.is_in_official_mode = dict["IsInOfficialMode"]
@@ -22,9 +22,12 @@ class Player():
 
         self.db_id = self.pyseco.db.add_player(self.login, self.nick_name)
 
+    def get_nick_name(self):
+        return(bytes(self.nick_name).decode("unicode_escape"))
+
     def modify(self, dict):
         self.login = dict["Login"]
-        self.nick_name = dict["NickName"]
+        self.nick_name = dict["NickName"].encode("unicode_escape")
         self.is_spectator = dict["IsSpectator"]
         self.player_id = dict["PlayerId"]
         self.is_in_official_mode = dict["IsInOfficialMode"]

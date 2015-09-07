@@ -11,27 +11,22 @@ from xmlrpc.client import Fault
 from gbxremote import GBX2xmlrpc
 
 class Player():
-    def __init__(self, dict, pyseco):
+    def __init__(self, data, pyseco):
         self.pyseco = pyseco
-        self.login = dict["Login"]
-        self.nick_name = dict["NickName"].encode("unicode_escape")
-        self.is_spectator = dict["IsSpectator"]
-        self.player_id = dict["PlayerId"]
-        self.is_in_official_mode = dict["IsInOfficialMode"]
-        self.ladder_ranking = dict["LadderRanking"]
+        self.modify(data)
 
         self.db_id = self.pyseco.db.add_player(self.login, self.nick_name)
 
     def get_nick_name(self):
         return(bytes(self.nick_name).decode("unicode_escape"))
 
-    def modify(self, dict):
-        self.login = dict["Login"]
-        self.nick_name = dict["NickName"].encode("unicode_escape")
-        self.is_spectator = dict["IsSpectator"]
-        self.player_id = dict["PlayerId"]
-        self.is_in_official_mode = dict["IsInOfficialMode"]
-        self.ladder_ranking = dict["LadderRanking"]
+    def modify(self, data):
+        self.login = data["Login"]
+        self.nick_name = data["NickName"].encode("unicode_escape")
+        self.is_spectator = data["IsSpectator"]
+        self.player_id = data["PlayerId"]
+        self.is_in_official_mode = data["IsInOfficialMode"]
+        self.ladder_ranking = data["LadderRanking"]
 
 class PySECO(GBX2xmlrpc):
     def __init__(self, config_file):

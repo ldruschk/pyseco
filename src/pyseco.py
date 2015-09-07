@@ -206,11 +206,6 @@ if __name__ == "__main__":
                 print(pyseco.query((int(arr[1]),),"SetNextMapIndex"))
             else:
                 print(pyseco.query((),text))
-            #print(pyseco.query((300,0),text))
-            #pyseco.send((),text)
-            #print(pyseco.query((),text))
-            #pygbx.send(("the_legend_of_master",),text)
-            #pygbx.send((text,),"ChatSendServerMessage")
         except KeyboardInterrupt:
             pyseco.shutdown()
             break

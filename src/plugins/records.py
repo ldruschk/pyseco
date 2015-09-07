@@ -25,15 +25,6 @@ class records(pyseco_plugin):
         if value[1] == "TrackMania.BeginChallenge":
             self.new_map(value[0][0])
 
-    '''def add_player(self, login, player = None):
-        if not player:
-            player = self.pyseco.get_player(login)
-        if not player:
-            return
-        record = self.pyseco.db.get_record(self.map_id, player.db_id)
-        if record:
-            self.records[login] = record'''
-
     def process_finish(self, newtime,ranking):
         print(newtime,ranking)
         login = ranking["Login"]
@@ -51,6 +42,3 @@ class records(pyseco_plugin):
 
     def new_map(self, value):
         self.map_id = self.pyseco.db.add_map(value["UId"],value["Name"],value["Author"],value["NbCheckpoints"],value["AuthorTime"])
-        #self.records = dict()
-        #for login, player in self.pyseco.players.items():
-            #self.add_player(login,player)

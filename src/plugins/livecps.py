@@ -23,7 +23,6 @@ class livecps(pyseco_plugin):
         pyseco_plugin.__init__(self, pyseco)
         self.initialize()
         self.pyseco.add_callback_listener("TrackMania.PlayerCheckpoint", self)
-        #self.pyseco.add_callback_listener("TrackMania.PlayerFinish", self)
         self.pyseco.add_callback_listener("TrackMania.BeginRace",self)
 
     def initialize(self):
@@ -31,12 +30,10 @@ class livecps(pyseco_plugin):
         self.new_map(value[0])
 
     def process_callback(self, value):
-        if value[1] == "TrackMania.PlayerCheckpoint": # or value[1] == "TrackMania.PlayerFinish":
+        if value[1] == "TrackMania.PlayerCheckpoint":
             self.process_checkpoint(value[0])
         if value[1] == "TrackMania.BeginRace":
             self.new_map(value[0])
-        #if value[1] == "TrackMania.PlayerFinish":
-        #    self.update_checkpoint_manialink(0, 15000, "teasdjkhalsdhbajskdhbaskhjdbaskhjdbasjdkhbasdst")
 
     def process_checkpoint(self, value):
         player = value[1]
@@ -50,7 +47,6 @@ class livecps(pyseco_plugin):
         elif time < self.checkpoint_recs[cp]["time"]:
             self.checkpoint_recs[cp] = {"player":player,"time":time}
             self.update_checkpoint_manialink(cp, time, self.pyseco.get_player(player).get_nick_name())
-        #self.pyseco.send_chat_message(str(self.checkpoint_recs))
 
     def update_checkpoint_manialink(self, num_cp, time, name):
         row = int(num_cp / 6)

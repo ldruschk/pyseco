@@ -7,5 +7,9 @@ class manialink(pyseco_plugin):
         self.pyseco.add_callback_listener("TrackMania.EndRound",self)
 
     def process_callback(self, value):
-        if value[1] == "TrackMania.StatusChanged" or value[1] == "TrackMania.EndRound":
+        if value[1] == "TrackMania.EndRound":
             self.pyseco.send((),"SendHideManialinkPage")
+        elif value[1] == "TrackMania.StatusChanged":
+            status = self.pyseco.query((),"GetStatus")
+            if status[0][0]["Code"] != 4: # Challenge running
+                self.pyseco.send((),"SendHideManialinkPage")

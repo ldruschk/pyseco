@@ -196,11 +196,21 @@ if __name__ == "__main__":
     while 1:
         try:
             text = input()
+            arr = text.split(" ")
+            if arr[0] == "NextMap":
+                print(pyseco.query((),"NextMap"))
+            elif arr[0] == "SetNextMapIndex":
+                print(pyseco.query((int(arr[1]),),"SetNextMapIndex"))
+            else:
+                print(pyseco.query((),text))
             #print(pyseco.query((300,0),text))
             #pyseco.send((),text)
-            print(pyseco.query((),text))
+            #print(pyseco.query((),text))
             #pygbx.send(("the_legend_of_master",),text)
             #pygbx.send((text,),"ChatSendServerMessage")
         except KeyboardInterrupt:
             pyseco.shutdown()
             break
+        except Exception as e:
+            print(type(e))
+            print(str(e))

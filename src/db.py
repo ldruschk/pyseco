@@ -216,20 +216,37 @@ class PySECO_DB():
         self.pyseco.db_lock.acquire()
         cur = self.conn.cursor()
         cur.execute("""
-                SELECT time, id
+                SELECT (SELECT rank
+                    FROM (SELECT (@row_number:=@row_number + 1) AS rank,
+                            player.login
+                        FROM record,
+                            (SELECT @row_number := 0) r,
+                            player
+                        WHERE record.mid = %s
+                        AND record.pid = player.id
+                        ORDER BY record.time, record.timestamp ASC
+                        LIMIT 200) ranks
+                        WHERE login = %s) AS rank,
+                    time,
+                    id
                 FROM record,player
                 WHERE mid = %s AND pid = player.id AND login = %s LIMIT 1""",
-                (mid, login))
+                (mid, login, mid, login))
         data = cur.fetchone()
+        print(data)
         if data is None:
+            prev_rank = None
+            prev_time = None
             cur.execute("""
                     INSERT INTO record (mid,pid,time,timestamp)
                     VALUES (%s,
                         (SELECT id FROM player WHERE login = %s LIMIT 1),
                         %s, %s)""",
                     (mid, login, time, timestamp))
-            retval = 0
-        elif time < data[0]:
+            new_time = time
+        elif time < data[1]:
+            prev_rank = data[0]
+            prev_time = data[1]
             cur.execute("""
                     UPDATE record
                     SET time = %s,
@@ -238,10 +255,36 @@ class PySECO_DB():
                     AND pid = (SELECT id FROM player WHERE login = %s LIMIT 1)
                     LIMIT 1""",
                     (time, timestamp, mid, login))
-            retval = data[0]
+            new_time = time
         else:
-            retval = time
+            prev_rank = data[0]
+            prev_time = data[1]
+            new_time = data[1]
+
+        cur.execute("""
+                SELECT (SELECT rank
+                    FROM (SELECT (@row_number:=@row_number + 1) AS rank,
+                            player.login
+                        FROM record,
+                            (SELECT @row_number := 0) r,
+                            player
+                        WHERE record.mid = %s
+                        AND record.pid = player.id
+                        ORDER BY record.time, record.timestamp ASC
+                        LIMIT 200) ranks
+                        WHERE login = %s) AS rank
+                FROM record,player
+                WHERE mid = %s AND pid = player.id AND login = %s LIMIT 1""",
+                (mid, login, mid, login))
+
+        data = cur.fetchone()
+        if data is None:
+            raise DBException("Failed to handle record")
+
+        new_rank = data[0]
+
         cur.close()
         self.conn.commit()
         self.pyseco.db_lock.release()
-        return retval
+
+        return (prev_rank, prev_time, new_rank, new_time)

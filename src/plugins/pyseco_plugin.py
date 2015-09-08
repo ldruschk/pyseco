@@ -1,8 +1,9 @@
 from threading import Event, Thread
 from queue import Queue
 
+
 class pyseco_plugin():
-    def __init__(self, pyseco, db = False):
+    def __init__(self, pyseco, db=False):
         self.pyseco = pyseco
         self.event = Event()
         self.callback_queue = Queue()
@@ -18,7 +19,8 @@ class pyseco_plugin():
             try:
                 self.db = self.pyseco.connect_db()
             except Exception as e:
-                self.error_log("failed to connect to DB: %s" % str(e), fatal = True)
+                self.error_log("failed to connect to DB: %s" % str(e),
+                               fatal=True)
                 return
         while not self.stop_event.is_set():
             self.callback_wait()
@@ -52,7 +54,7 @@ class pyseco_plugin():
     def console_log(self, string):
         self.pyseco.console_log("[%s] %s" % (self.__class__.__name__, string))
 
-    def error_log(self, string, fatal = False):
+    def error_log(self, string, fatal=False):
         self.pyseco.error_log("[%s] %s" % (self.__class__.__name__, string))
         if fatal:
             self.stop()

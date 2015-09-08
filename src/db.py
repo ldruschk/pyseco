@@ -44,11 +44,12 @@ class PySECO_DB():
         self.conn.close()
 
     def add_player(self, login, nickname):
+        print(self.conn.begin())
         self.cursor.execute("SELECT id FROM player WHERE login = %s LIMIT 1",(login))
         data = self.cursor.fetchone()
         if data is None:
             self.cursor.execute("INSERT INTO player (login,nickname) VALUES (%s,%s)",(login, nickname))
-            self.cursor.execute("SELECT id FROM player WHERE login = %s LIMIT 1",(login))
+            self.cursor.execute("SELECT last_insert_id()")
             data = self.cursor.fetchone()
             if data is None:
                 raise DBException("Failed to create/load player")
@@ -57,22 +58,29 @@ class PySECO_DB():
         return(data[0])
 
     def add_map(self, uid, name, author, num_cp, authortime):
-        self.cursor.execute("SELECT id FROM map WHERE uid = %s LIMIT 1",(uid))
-        data = self.cursor.fetchone()
+        cursor = self.conn.cursor()
+        cursor.execute("SELECT id FROM map WHERE uid = %s LIMIT 1",(uid))
+        data = cursor.fetchone()
+        print(data)
+        print(self.conn,cursor)
         if data is None:
-            self.cursor.execute("INSERT INTO map (uid,name,author,num_cp,authortime) VALUES (%s,%s,%s,%s,%s)",(uid,uid,name,author,num_cp,authortime))
-            self.cursor.execute("SELECT id FROM map WHERE uid = %s LIMIT 1",(uid))
-            data = self.cursor.fetchone()
+            try:
+                cursor.execute("INSERT INTO map (uid,name,author,num_cp,authortime) VALUES (%s,%s,%s,%s,%s)",(uid,name,author,num_cp,authortime))
+            except pymysql.err.IntegrityError:
+                raise DBException("Failed to create/load map")
+            cursor.execute("SELECT last_insert_id()")
+            data = cursor.fetchone()
             if data is None:
                 raise DBException("Failed to create/load map")
+        cursor.close()
         self.conn.commit()
 
         return(data[0])
 
     def get_record(self, mid, pid):
-        self.conn.commit()
         self.cursor.execute("SELECT time FROM record WHERE pid = %s AND mid = %s LIMIT 1" , (pid,mid))
         data = self.cursor.fetchone()
+        self.conn.commit()
 
         if data is None:
             return None
@@ -80,7 +88,6 @@ class PySECO_DB():
             return data[0]
 
     def get_record_list(self, mid, login):
-        self.conn.commit()
         # Params:
         # Map ID, Map ID, Map ID, Player Login, Map ID, Map ID, Map ID
         self.cursor.execute("""(SELECT (@row_number := @row_number + 1) AS rank,
@@ -117,6 +124,7 @@ class PySECO_DB():
         WHERE (x.count = 1 AND rank >= LEAST(GREATEST(4,(SELECT COUNT(*) FROM record WHERE record.mid = %s)-10),200-10,GREATEST(x.target_rank-5 , 4)) AND rank <= LEAST(GREATEST(4,(SELECT COUNT(*) FROM record WHERE record.mid = %s)),200,GREATEST(x.target_rank-5,4)+10))
             OR (x.count != 1 AND rank >= GREATEST(4,LEAST(200,(SELECT COUNT(*) FROM record WHERE record.mid = %s))-9)));""", (mid, mid, mid, login, mid, mid, mid))
         data = self.cursor.fetchall()
+        self.conn.commit()
         out = []
 
         for element in data:
@@ -128,9 +136,9 @@ class PySECO_DB():
     # returns 0 if new record was created
     # returns previous record else
     def handle_record(self,mid,login,time,timestamp):
-        self.conn.commit()
         retval = -1
 
+        self.conn.begin()
         self.cursor.execute("SELECT time,id FROM record,player WHERE mid = %s AND pid = player.id and login = %s LIMIT 1", (mid,login))
         data = self.cursor.fetchone()
         if data is None:

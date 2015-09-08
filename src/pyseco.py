@@ -11,11 +11,10 @@ from xmlrpc.client import Fault
 from gbxremote import GBX2xmlrpc
 
 class Player():
-    def __init__(self, data, pyseco):
-        self.pyseco = pyseco
+    def __init__(self, data, db):
         self.modify(data)
 
-        self.db_id = self.pyseco.db.add_player(self.login, self.nick_name)
+        self.db_id = db.add_player(self.login, self.nick_name)
 
     def get_nick_name(self):
         return(bytes(self.nick_name).decode("unicode_escape"))
@@ -46,11 +45,12 @@ class PySECO(GBX2xmlrpc):
                 self.error_log("Failed to conect to %s:%d" % (server_ip, server_port), True)
             self.console_log("Connected to %s:%d" % (server_ip, server_port))
 
-            mysql_host = self.config["mysql"]["host"]
-            mysql_login = self.config["mysql"]["login"]
-            mysql_password = self.config["mysql"]["password"]
-            mysql_database = self.config["mysql"]["database"]
-            if not self.connect_db(mysql_host, mysql_login, mysql_password, mysql_database):
+            self.mysql_host = self.config["mysql"]["host"]
+            self.mysql_login = self.config["mysql"]["login"]
+            self.mysql_password = self.config["mysql"]["password"]
+            self.mysql_database = self.config["mysql"]["database"]
+            self.db = self.connect_db()
+            if self.db is None:
                 self.error_log("Failed to connect to database", True)
 
             if not self.auth(self.config["authorization"]["name"], self.config["authorization"]["password"]):
@@ -72,13 +72,12 @@ class PySECO(GBX2xmlrpc):
         self.initialize()
         self.console_log("Setup complete")
 
-    def connect_db(self, host, login, password, database):
+    def connect_db(self):
         try:
-            self.db = PySECO_DB(host,login,password,database)
-            return True
+            return PySECO_DB(self.mysql_host,self.mysql_login,self.mysql_password,self.mysql_database)
         except Exception as e:
             self.error_log("[DB] %s" % str(e))
-            return False
+            return None
 
     def get_player(self, login):
         if login not in self.players:
@@ -169,7 +168,7 @@ class PySECO(GBX2xmlrpc):
             return
 
         self.notify_callback_listeners(value)
-        print(value)
+        #print(value)
 
     def error_log(self, string, fatal = False):
         self.console_log("[Error] " + string)

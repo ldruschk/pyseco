@@ -3,7 +3,7 @@ from pyseco import Player
 
 class playermanager(pyseco_plugin):
     def __init__(self, pyseco):
-        pyseco_plugin.__init__(self, pyseco)
+        pyseco_plugin.__init__(self, pyseco, db = True)
         self.pyseco.add_callback_listener("TrackMania.PlayerConnect", self)
         self.pyseco.add_callback_listener("TrackMania.PlayerDisconnect", self)
         self.pyseco.add_callback_listener("TrackMania.PlayerInfoChanged", self)
@@ -28,7 +28,7 @@ class playermanager(pyseco_plugin):
 
     def player_add(self, player_info):
         if player_info["Login"] not in self.pyseco.players:
-            player = Player(player_info,self.pyseco)
+            player = Player(player_info,self.db)
             self.pyseco.players[player_info["Login"]] = player
             self.pyseco.send_chat_message("$fff$i>> %sPlayer $z$s%s$z$s%s$i has joined the game." % (self.pyseco.chat_color, player.get_nick_name(), self.pyseco.chat_color))
 

@@ -1,6 +1,7 @@
 from plugins.pyseco_plugin import pyseco_plugin
 import time
 import threading
+from db import DBException
 
 class recordsgui(pyseco_plugin):
     # str: id
@@ -27,10 +28,12 @@ class recordsgui(pyseco_plugin):
 </frame>"""
 
     def __init__(self, pyseco):
-        pyseco_plugin.__init__(self, pyseco)
+        pyseco_plugin.__init__(self, pyseco, db = True)
         self.pyseco.add_callback_listener("TrackMania.BeginRound",self)
         self.pyseco.add_callback_listener("TrackMania.EndRound",self)
         self.pyseco.add_callback_listener("TrackMania.BeginChallenge",self)
+
+        self.update_event = threading.Event()
 
         self.initialize()
 
@@ -54,16 +57,26 @@ class recordsgui(pyseco_plugin):
     def handle_updates(self, refresh):
         last_update = -1
         while True:
-            while not self.update or int(time.time()) < last_update + refresh:
+            while not self.update_event.is_set() and (not self.update or int(time.time()) < last_update + refresh):
                 time.sleep(1)
+            if self.update_event.is_set():
+                break
             for login,player in self.pyseco.players.items():
-                ranking = self.pyseco.db.get_record_list(self.map_id, login)
+                ranking = self.db.get_record_list(self.map_id, login)
                 xml = self.generate_local_xml(login,player.get_nick_name(),ranking)
                 self.pyseco.send((login,xml,0,False),"SendDisplayManialinkPageToLogin")
             last_update = int(time.time())
 
+    def stop(self):
+        self.update_event.set()
+        pyseco_plugin.stop(self)
+
+
     def new_map(self, value):
-        self.map_id = self.pyseco.db.add_map(value["UId"],value["Name"],value["Author"],value["NbCheckpoints"],value["AuthorTime"])
+        try:
+            self.map_id = self.db.add_map(value["UId"],value["Name"],value["Author"],value["NbCheckpoints"],value["AuthorTime"])
+        except DBException as e:
+            self.error_log(str(e), fatal = True)
 
     def generate_local_xml(self, player_login, player_name, rec_list):
         entry_xml = ""

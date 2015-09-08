@@ -44,33 +44,28 @@ class PySECO_DB():
         self.conn.close()
 
     def add_player(self, login, nickname):
-        try:
-            self.cursor.execute("INSERT INTO player (login,nickname) VALUES (%s,%s)",(login, nickname))
-        except pymysql.MySQLError as e:
-            pass
-        self.conn.commit()
         self.cursor.execute("SELECT id FROM player WHERE login = %s LIMIT 1",(login))
-
         data = self.cursor.fetchone()
         if data is None:
-            raise DBException("Failed to create/load player")
+            self.cursor.execute("INSERT INTO player (login,nickname) VALUES (%s,%s)",(login, nickname))
+            self.cursor.execute("SELECT id FROM player WHERE login = %s LIMIT 1",(login))
+            data = self.cursor.fetchone()
+            if data is None:
+                raise DBException("Failed to create/load player")
+        self.conn.commit()
 
         return(data[0])
 
     def add_map(self, uid, name, author, num_cp, authortime):
-        try:
-            self.cursor.execute("INSERT INTO map (uid,name,author,num_cp,authortime) VALUES (%s,%s,%s,%s,%s)",(uid,name,author,num_cp,authortime))
-        except pymysql.MySQLError as e:
-            pass
-        try:
-            self.conn.commit()
-        except pymysql.err.IntegrityError:
-            pass
         self.cursor.execute("SELECT id FROM map WHERE uid = %s LIMIT 1",(uid))
-
         data = self.cursor.fetchone()
         if data is None:
-            raise DBException("Failed to create/load map")
+            self.cursor.execute("INSERT INTO map (uid,name,author,num_cp,authortime) VALUES (%s,%s,%s,%s,%s)",(uid,uid,name,author,num_cp,authortime))
+            self.cursor.execute("SELECT id FROM map WHERE uid = %s LIMIT 1",(uid))
+            data = self.cursor.fetchone()
+            if data is None:
+                raise DBException("Failed to create/load map")
+        self.conn.commit()
 
         return(data[0])
 

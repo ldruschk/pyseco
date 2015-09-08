@@ -5,7 +5,7 @@ import importlib
 import copy
 
 from db import PySECO_DB, DBException
-from threading import Thread, Event
+from threading import Thread, Event, Lock
 from xmlrpc.client import Fault
 
 from gbxremote import GBX2xmlrpc
@@ -34,6 +34,8 @@ class PySECO(GBX2xmlrpc):
         self.listeners = dict()
         self.responses = dict()
         self.players = dict()
+
+        self.db_lock = Lock()
 
         self.chat_color = "$f08"
 
@@ -74,7 +76,7 @@ class PySECO(GBX2xmlrpc):
 
     def connect_db(self):
         try:
-            return PySECO_DB(self.mysql_host,self.mysql_login,self.mysql_password,self.mysql_database)
+            return PySECO_DB(self, self.mysql_host,self.mysql_login,self.mysql_password,self.mysql_database)
         except Exception as e:
             self.error_log("[DB] %s" % str(e))
             return None

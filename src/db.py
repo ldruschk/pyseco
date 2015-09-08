@@ -1,6 +1,7 @@
 import pymysql
 import warnings
 import codecs
+import time
 
 class DBException(Exception):
     def __init__(self):
@@ -10,10 +11,10 @@ class DBException(Exception):
         Exception.__init__(self, msg)
 
 class PySECO_DB():
-    def __init__(self, host, username, password, db):
+    def __init__(self, pyseco, host, username, password, db):
+        self.pyseco = pyseco
         try:
-            self.conn = pymysql.connect(host = host, user = username, password = password, db = db)
-            self.cursor = self.conn.cursor()
+            self.conn = pymysql.connect(host = host, user = username, password = password, db = db, autocommit = False)
             self.setup()
         except pymysql.err.OperationalError:
             raise DBException("connection failed")
@@ -21,66 +22,78 @@ class PySECO_DB():
             raise e
 
     def setup(self):
+        self.pyseco.db_lock.acquire()
+        cur = self.conn.cursor()
         with warnings.catch_warnings():
             warnings.filterwarnings("error")
             try:
-                self.cursor.execute("CREATE TABLE IF NOT EXISTS player (id INT UNSIGNED NOT NULL AUTO_INCREMENT, login VARCHAR(64) NOT NULL, nickname VARCHAR(128) NOT NULL, PRIMARY KEY(id), UNIQUE KEY(login))")
+                cur.execute("CREATE TABLE IF NOT EXISTS player (id INT UNSIGNED NOT NULL AUTO_INCREMENT, login VARCHAR(64) NOT NULL, nickname VARCHAR(128) NOT NULL, PRIMARY KEY(id), UNIQUE KEY(login))")
             except pymysql.err.Warning as e:
                 pass
             try:
-                self.cursor.execute("CREATE TABLE IF NOT EXISTS map (id INT UNSIGNED NOT NULL AUTO_INCREMENT, uid VARCHAR(64) NOT NULL, name VARCHAR(128) NOT NULL, author VARCHAR(64) NOT NULL, num_cp SMALLINT NOT NULL, authortime INT NOT NULL, PRIMARY KEY(id), UNIQUE KEY(uid))")
+                cur.execute("CREATE TABLE IF NOT EXISTS map (id INT UNSIGNED NOT NULL AUTO_INCREMENT, uid VARCHAR(64) NOT NULL, name VARCHAR(128) NOT NULL, author VARCHAR(64) NOT NULL, num_cp SMALLINT NOT NULL, authortime INT NOT NULL, PRIMARY KEY(id), UNIQUE KEY(uid))")
             except pymysql.err.Warning as e:
                 pass
             try:
-                self.cursor.execute("""CREATE TABLE IF NOT EXISTS record (pid INT UNSIGNED NOT NULL, mid INT UNSIGNED NOT NULL, time INT UNSIGNED NOT NULL, timestamp BIGINT UNSIGNED NOT NULL, PRIMARY KEY(pid,mid),
+                cur.execute("""CREATE TABLE IF NOT EXISTS record (pid INT UNSIGNED NOT NULL, mid INT UNSIGNED NOT NULL, time INT UNSIGNED NOT NULL, timestamp BIGINT UNSIGNED NOT NULL, PRIMARY KEY(pid,mid),
                     CONSTRAINT fk_playerRecord FOREIGN KEY (pid) REFERENCES player(id) ON UPDATE CASCADE ON DELETE CASCADE,
                     CONSTRAINT fk_mapRecord FOREIGN KEY (mid) REFERENCES map(id) ON UPDATE CASCADE ON DELETE CASCADE)""")
             except pymysql.err.Warning as e:
                 pass
-            self.conn.commit()
+        cur.close()
+        self.conn.commit()
+        self.pyseco.db_lock.release()
 
     def close(self):
         self.conn.commit()
         self.conn.close()
 
     def add_player(self, login, nickname):
-        print(self.conn.begin())
-        self.cursor.execute("SELECT id FROM player WHERE login = %s LIMIT 1",(login))
-        data = self.cursor.fetchone()
+        self.pyseco.db_lock.acquire()
+        cur = self.conn.cursor()
+        cur.execute("SELECT id FROM player WHERE login = %s LIMIT 1",(login))
+        data = cur.fetchone()
         if data is None:
-            self.cursor.execute("INSERT INTO player (login,nickname) VALUES (%s,%s)",(login, nickname))
-            self.cursor.execute("SELECT last_insert_id()")
-            data = self.cursor.fetchone()
+            cur.execute("INSERT INTO player (login,nickname) VALUES (%s,%s)",(login, nickname))
+            cur.execute("SELECT last_insert_id()")
+            data = cur.fetchone()
             if data is None:
                 raise DBException("Failed to create/load player")
+        cur.close()
         self.conn.commit()
+        self.pyseco.db_lock.release()
 
         return(data[0])
 
     def add_map(self, uid, name, author, num_cp, authortime):
-        cursor = self.conn.cursor()
-        cursor.execute("SELECT id FROM map WHERE uid = %s LIMIT 1",(uid))
-        data = cursor.fetchone()
-        print(data)
-        print(self.conn,cursor)
+        self.pyseco.db_lock.acquire()
+        cur = self.conn.cursor()
+        cur.execute("SELECT id FROM map WHERE uid = %s LIMIT 1",(uid))
+        data = cur.fetchone()
         if data is None:
             try:
-                cursor.execute("INSERT INTO map (uid,name,author,num_cp,authortime) VALUES (%s,%s,%s,%s,%s)",(uid,name,author,num_cp,authortime))
-            except pymysql.err.IntegrityError:
-                raise DBException("Failed to create/load map")
-            cursor.execute("SELECT last_insert_id()")
-            data = cursor.fetchone()
+                cur.execute("INSERT INTO map (uid,name,author,num_cp,authortime) VALUES (%s,%s,%s,%s,%s)",(uid,name,author,num_cp,authortime))
+            except pymysql.err.IntegrityError as e:
+                raise DBException("Failed to create/load map: %s" % str(e))
+            cur.execute("SELECT last_insert_id()")
+            data = cur.fetchone()
             if data is None:
                 raise DBException("Failed to create/load map")
-        cursor.close()
+        cur.close()
         self.conn.commit()
+        self.pyseco.db_lock.release()
 
         return(data[0])
 
     def get_record(self, mid, pid):
-        self.cursor.execute("SELECT time FROM record WHERE pid = %s AND mid = %s LIMIT 1" , (pid,mid))
-        data = self.cursor.fetchone()
+        self.pyseco.db_lock.acquire()
+        cur = self.conn.cursor()
+        cur.execute("SELECT time FROM record WHERE pid = %s AND mid = %s LIMIT 1" , (pid,mid))
+        self.pyseco.db_lock.release()
+        data = cur.fetchone()
+        cur.close()
         self.conn.commit()
+        self.pyseco.db_lock.release()
 
         if data is None:
             return None
@@ -88,9 +101,11 @@ class PySECO_DB():
             return data[0]
 
     def get_record_list(self, mid, login):
+        self.pyseco.db_lock.acquire()
+        cur = self.conn.cursor()
         # Params:
         # Map ID, Map ID, Map ID, Player Login, Map ID, Map ID, Map ID
-        self.cursor.execute("""(SELECT (@row_number := @row_number + 1) AS rank,
+        cur.execute("""(SELECT (@row_number := @row_number + 1) AS rank,
             top.* FROM (SELECT record.time, player.login, player.nickname
             FROM record,
                 player
@@ -123,13 +138,14 @@ class PySECO_DB():
                 AND player.login = %s) x
         WHERE (x.count = 1 AND rank >= LEAST(GREATEST(4,(SELECT COUNT(*) FROM record WHERE record.mid = %s)-10),200-10,GREATEST(x.target_rank-5 , 4)) AND rank <= LEAST(GREATEST(4,(SELECT COUNT(*) FROM record WHERE record.mid = %s)),200,GREATEST(x.target_rank-5,4)+10))
             OR (x.count != 1 AND rank >= GREATEST(4,LEAST(200,(SELECT COUNT(*) FROM record WHERE record.mid = %s))-9)));""", (mid, mid, mid, login, mid, mid, mid))
-        data = self.cursor.fetchall()
+        data = cur.fetchall()
+        cur.close()
         self.conn.commit()
+        self.pyseco.db_lock.release()
         out = []
 
         for element in data:
             out.append(element[:3] + (element[3].encode().decode("unicode_escape"),))
-
 
         return out
 
@@ -138,17 +154,20 @@ class PySECO_DB():
     def handle_record(self,mid,login,time,timestamp):
         retval = -1
 
-        self.conn.begin()
-        self.cursor.execute("SELECT time,id FROM record,player WHERE mid = %s AND pid = player.id and login = %s LIMIT 1", (mid,login))
-        data = self.cursor.fetchone()
+        self.pyseco.db_lock.acquire()
+        cur = self.conn.cursor()
+        cur.execute("SELECT time,id FROM record,player WHERE mid = %s AND pid = player.id and login = %s LIMIT 1", (mid,login))
+        data = cur.fetchone()
         if data is None:
-            self.cursor.execute("INSERT INTO record (mid,pid,time,timestamp) VALUES (%s,(SELECT id FROM player WHERE login = %s LIMIT 1),%s,%s)",(mid,login,time,timestamp))
+            cur.execute("INSERT INTO record (mid,pid,time,timestamp) VALUES (%s,(SELECT id FROM player WHERE login = %s LIMIT 1),%s,%s)",(mid,login,time,timestamp))
             retval = 0
         else:
             if time < data[0]:
-                self.cursor.execute("UPDATE record SET time = %s, timestamp = %s WHERE mid = %s AND pid = (SELECT id FROM player WHERE login = %s LIMIT 1) LIMIT 1",(time,timestamp,mid,login))
+                cur.execute("UPDATE record SET time = %s, timestamp = %s WHERE mid = %s AND pid = (SELECT id FROM player WHERE login = %s LIMIT 1) LIMIT 1",(time,timestamp,mid,login))
                 retval = data[0]
             else:
                 retval = time
+        cur.close()
         self.conn.commit()
+        self.pyseco.db_lock.release()
         return retval

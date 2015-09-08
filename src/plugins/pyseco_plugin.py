@@ -18,7 +18,7 @@ class pyseco_plugin():
             try:
                 self.db = self.pyseco.connect_db()
             except Exception as e:
-                self.error_log("failed to connect to DB", fatal = True)
+                self.error_log("failed to connect to DB: %s" % str(e), fatal = True)
                 return
         while not self.stop_event.is_set():
             self.callback_wait()

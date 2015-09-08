@@ -27,7 +27,6 @@ class records(pyseco_plugin):
             self.new_map(value[0][0])
 
     def process_finish(self, newtime,ranking):
-        print(newtime,ranking)
         login = ranking["Login"]
         player = self.pyseco.get_player(login)
         rec_time = ranking["BestTime"]

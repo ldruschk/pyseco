@@ -36,6 +36,8 @@ class PySECO(GBX2xmlrpc):
         self.responses = dict()
         self.players = dict()
 
+        self.chat_color = "$f08"
+
         self.load_config(config_file)
         try:
             server_ip = self.config["server"]["ip"]

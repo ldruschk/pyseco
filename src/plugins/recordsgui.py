@@ -40,7 +40,7 @@ class recordsgui(pyseco_plugin):
         status = self.pyseco.query((),"GetStatus")
         self.update = status[0][0]["Code"] == 4 # Challenge running
 
-        self.update_thread = threading.Thread(target=self.handle_updates, args=(10,), daemon = True)
+        self.update_thread = threading.Thread(target=self.handle_updates, args=(2,), daemon = True)
         self.update_thread.start()
 
     def process_callback(self, value):
@@ -92,7 +92,7 @@ class recordsgui(pyseco_plugin):
         if not has_rec:
             entry_xml += self.local_records_entry_xml % (0.5, -2-i*1.5,0,
                 0,0,0,1.5,1,1,"$f08--.",
-                2,0,0,3,1,1,"--.---",
+                2,0,0,3,1,1,"$f08--.---",
                 5.5,0,0,7,1,1,player_name.replace("'","&apos;"))
 
         return self.local_records_xml % ("local_records",50.25,32,0,13.5,23.5,"BgsPlayerCard","BgCard",

@@ -41,6 +41,7 @@ class PySECO(GBX2xmlrpc):
         self.chat_color = "$f08"
 
         self.load_config(config_file)
+        self.apply_config()
 
         self.initialize()
         self.console_log("Setup complete")
@@ -177,7 +178,7 @@ class PySECO(GBX2xmlrpc):
 
         self.notify_callback_listeners(value)
         # Print all received messages - helpful for debugging
-        # print(value)
+        print(value)
 
     def error_log(self, string, fatal=False):
         if not string.startswith("["):
@@ -195,7 +196,11 @@ class PySECO(GBX2xmlrpc):
         print("[%s]%s" % (timestamp, string))
 
     def shutdown(self):
-        self.db.close()
+        try:
+            self.db.close()
+        # No DB has been initialized
+        except AttributeError:
+            pass
         GBX2xmlrpc.shutdown(self)
 
 if __name__ == "__main__":

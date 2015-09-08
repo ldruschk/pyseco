@@ -61,7 +61,7 @@ class recordsgui(pyseco_plugin):
     def handle_updates(self, refresh):
         last_update = -1
         while True:
-            while not (self.update_event.is_set()) and (self.update or int(time.time()) < last_update + refresh):
+            while (not self.update_event.is_set()) and (not self.update or int(time.time()) < last_update + refresh):
                 time.sleep(1)
             if self.update_event.is_set():
                 break

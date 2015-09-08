@@ -72,7 +72,7 @@ class PySECO_DB():
         try:
             self.conn.commit()
             self.conn.close()
-        except Exception e:
+        except Exception as e:
             pass
 
     def add_player(self, login, nickname):

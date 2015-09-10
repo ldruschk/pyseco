@@ -36,6 +36,8 @@ class PySECO(GBX2xmlrpc):
         self.chat_command_listeners = dict()
         self.responses = dict()
         self.players = dict()
+        self.permissions_admin = set()
+        self.permissions_mod = set()
 
         self.db_lock = Lock()
 
@@ -76,6 +78,9 @@ class PySECO(GBX2xmlrpc):
             except KeyError:
                 self.enable_callbacks()
 
+            self.permissions_init(self.config["permissions"]["admin"],
+                                  self.config["permissions"]["mod"])
+
             for plugin in self.config["plugins"]:
                 self.enable_plugin(plugin["name"], plugin["settings"])
         except KeyError as e:
@@ -88,6 +93,23 @@ class PySECO(GBX2xmlrpc):
         except Exception as e:
             self.error_log("[DB] %s" % str(e))
             return None
+
+    def permissions_init(self, admin, mod):
+        for login in admin:
+            self.permissions_admin.add(login)
+        for login in mod:
+            self.permissions_mod.add(login)
+
+    def get_permission(self, login):
+        admin = False
+        mod = False
+        if login in self.permissions_admin:
+            admin = True
+            mod = True
+        elif login in self.permissions_mod:
+            mod = True
+
+        return (admin, mod)
 
     def get_player(self, login):
         if login in self.players:

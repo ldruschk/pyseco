@@ -13,11 +13,11 @@ class chatmanager(pyseco_plugin):
                 self.parse(value[0])
 
     def parse(self, value):
-        user = value[1]
-        # Todo: Check permissions
+        login = value[1]
+        admin, mod = self.pyseco.get_permission(login)
 
         out = shlex.split(value[2])
         command = out[0][1:]
         params = out[1:]
 
-        self.pyseco.chat_command(command, params, user, admin=True, mod=True)
+        self.pyseco.chat_command(command, params, login, admin=admin, mod=mod)

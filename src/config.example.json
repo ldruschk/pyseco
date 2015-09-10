@@ -6,6 +6,12 @@
     "name":"SuperAdmin",
     "password":"SuperAdmin"
     },
+"permissions":{
+        "admin":[
+        ],
+        "mod":[
+        ]
+    },
 "xmlrpc_enableCallbacks":true,
 "plugins":[
     {"name":"chatmanager","settings":{}},

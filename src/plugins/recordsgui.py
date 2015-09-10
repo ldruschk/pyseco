@@ -57,6 +57,7 @@ class recordsgui(pyseco_plugin):
             self.update = True
         elif value[1] == "TrackMania.BeginChallenge":
             self.new_map(value[0][0])
+            self.update = True
 
     def handle_updates(self, refresh):
         last_update = -1
@@ -72,6 +73,7 @@ class recordsgui(pyseco_plugin):
                                          ranking)
                 self.pyseco.send((login, xml, 0, False),
                                  "SendDisplayManialinkPageToLogin")
+            self.pyseco.add_manialink("local_records",ingame=True)
             last_update = int(time.time())
 
     def stop(self):

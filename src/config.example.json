@@ -14,13 +14,14 @@
     },
 "xmlrpc_enableCallbacks":true,
 "plugins":[
+    {"name":"manialink","settings":{}},
     {"name":"chatmanager","settings":{}},
     {"name":"playermanager","settings":{}},
     {"name":"livecps","settings":{}},
-    {"name":"manialink","settings":{}},
     {"name":"records","settings":{}},
     {"name":"recordsgui","settings":{}},
-    {"name":"mapmanager","settings":{}}
+    {"name":"mapmanager","settings":{}},
+    {"name":"mapinfo","settings":{}}
 ],
 "mysql":{
     "host":"localhost",

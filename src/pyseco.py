@@ -38,6 +38,8 @@ class PySECO(GBX2xmlrpc):
         self.players = dict()
         self.permissions_admin = set()
         self.permissions_mod = set()
+        self.manialinks_ingame = set()
+        self.manialinks_endgame = set()
 
         self.db_lock = Lock()
 
@@ -47,6 +49,7 @@ class PySECO(GBX2xmlrpc):
         self.apply_config()
 
         self.initialize()
+
         self.console_log("Setup complete")
 
     def apply_config(self):
@@ -94,6 +97,26 @@ class PySECO(GBX2xmlrpc):
             self.error_log("[DB] %s" % str(e))
             return None
 
+    # Add the manialink id here if you do not want to care about cleanup
+    # ingame: whether the manialink was shown ingame or in the endgame screen
+    def add_manialink(self, id_, ingame=True):
+        if ingame:
+            self.manialinks_ingame.add(id_)
+        else:
+            self.manialinks_endgame.add(id_)
+
+    def get_manialinks(self, ingame=True):
+        if ingame:
+            return self.manialinks_ingame
+        else:
+            return self.manialinks_endgame
+
+    def reset_manialinks(self, ingame=True):
+        if ingame:
+            self.manialinks_ingame = set()
+        else:
+            self.manialinks_endgame = set()
+
     def permissions_init(self, admin, mod):
         for login in admin:
             self.permissions_admin.add(login)
@@ -129,7 +152,6 @@ class PySECO(GBX2xmlrpc):
                 listener.chat_command_notify(command, params, login, admin, mod)
 
     def initialize(self):
-        self.send((), "SendHideManialinkPage")
         system_info = self.query((), "GetSystemInfo")
         self.server_login = system_info[0][0]['ServerLogin']
         server_options = self.query((), "GetServerOptions")

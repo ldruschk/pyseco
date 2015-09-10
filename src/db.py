@@ -95,6 +95,7 @@ class PySECO_DB():
         return(data[0])
 
     def add_map(self, uid, name, author, num_cp, authortime):
+        name = name.encode("unicode_escape")
         self.pyseco.db_lock.acquire()
         cur = self.conn.cursor()
         cur.execute("SELECT id FROM map WHERE uid = %s LIMIT 1", (uid))

@@ -42,7 +42,7 @@ class mapmanager(pyseco_plugin):
         map_path = os.path.join(self.download_dir, uid+".gbx")
         # File already exists
         if os.path.isfile(map_path):
-            return
+            return map_path
         url = "http://tm.mania-exchange.com/tracks/download/%s" % tid
 
         with open(map_path, "wb") as f:

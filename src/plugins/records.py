@@ -6,8 +6,8 @@ from plugins.pyseco_plugin import pyseco_plugin
 
 class records(pyseco_plugin):
     claimed_msg = "$fff$i>> %sPlayer $z$s%s$z$s$i%s claimed the $aaa%d%s. record with: $fff%d"
-    improved_msg = "$fff$i>> %sPlayer $z$s%s$z$s$i%s improved his $aaa%d%s. record with: $fff%d%s (-$fff%d%s)"
-    equaled_msg = "$fff$i>> %sPlayer $z$s%s$z$s$i%s equaled his $aaa%d%s. record with: $fff%d"
+    improved_msg = "$fff$i>> %sPlayer $z$s%s$z$s$i%s improved their $aaa%d%s. record with: $fff%d%s (-$fff%d%s)"
+    equaled_msg = "$fff$i>> %sPlayer $z$s%s$z$s$i%s equaled their $aaa%d%s. record with: $fff%d"
     gained_msg = "$fff$i>> %sPlayer $z$s%s$z$s$i%s gained the $aaa%d%s. record with: $fff%d%s (-$aaa%d%s, -$fff%d%s)"
 
     def gen_claimed_msg(self, nick_name, prev_rank, prev_time,

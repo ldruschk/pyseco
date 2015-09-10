@@ -33,6 +33,7 @@ class PySECO(GBX2xmlrpc):
 
         self.callback_listeners = dict()
         self.listeners = dict()
+        self.chat_command_listeners = dict()
         self.responses = dict()
         self.players = dict()
 
@@ -93,6 +94,17 @@ class PySECO(GBX2xmlrpc):
             return self.players[login]
         else:
             return None
+
+    def register_chat_command(self, command, listener):
+        if command not in self.chat_command_listeners:
+            self.chat_command_listeners[command] = []
+        if listener not in self.chat_command_listeners[command]:
+            self.chat_command_listeners[command].append(listener)
+
+    def chat_command(self, command, params, login, admin=False, mod=False):
+        if command in self.chat_command_listeners:
+            for listener in self.chat_command_listeners[command]:
+                listener.chat_command_notify(command, params, login, admin, mod)
 
     def initialize(self):
         self.send((), "SendHideManialinkPage")

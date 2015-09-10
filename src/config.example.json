@@ -8,6 +8,7 @@
     },
 "xmlrpc_enableCallbacks":true,
 "plugins":[
+    {"name":"chatmanager","settings":{}},
     {"name":"playermanager","settings":{}},
     {"name":"livecps","settings":{}},
     {"name":"manialink","settings":{}},

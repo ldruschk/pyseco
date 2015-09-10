@@ -7,6 +7,7 @@ class pyseco_plugin():
         self.pyseco = pyseco
         self.event = Event()
         self.callback_queue = Queue()
+        self.chat_command_queue = Queue()
         self.db_required = db
         self.db = None
         self.stop_event = Event()
@@ -32,16 +33,23 @@ class pyseco_plugin():
         self.console_log("plugin shutting down")
 
     def callback_wait(self):
-        while not self.callback_queue:
+        while self.callback_queue.empty() and self.chat_command_queue.empty():
             self.event.wait()
             self.event.clear()
             if self.stop_event.is_set():
                 return
 
-        self.process_callback(self.callback_queue.get())
+        while not self.callback_queue.empty():
+            self.process_callback(self.callback_queue.get())
+        while not self.chat_command_queue.empty():
+            self.process_chat_command(*self.chat_command_queue.get())
 
     def callback_notify(self, value):
         self.callback_queue.put(value)
+        self.event.set()
+
+    def chat_command_notify(self, command, params, login, admin, mod):
+        self.chat_command_queue.put((command, params, login, admin, mod))
         self.event.set()
 
     def stop(self):
@@ -50,6 +58,12 @@ class pyseco_plugin():
 
     def process_callback(self, value):
         raise NotImplementedError()
+
+    def process_chat_command(self, command, params, login, admin, op):
+        raise NotImplementedError()
+
+    def register_chat_command(self, command):
+        self.pyseco.register_chat_command(command, self)
 
     def console_log(self, string):
         self.pyseco.console_log("[%s] %s" % (self.__class__.__name__, string))

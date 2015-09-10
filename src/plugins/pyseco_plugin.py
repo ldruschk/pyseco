@@ -65,6 +65,9 @@ class pyseco_plugin():
     def register_chat_command(self, command):
         self.pyseco.register_chat_command(command, self)
 
+    def register_callback(self, value):
+        self.pyseco.add_callback_listener(value, self)
+
     def console_log(self, string):
         self.pyseco.console_log("[%s] %s" % (self.__class__.__name__, string))
 

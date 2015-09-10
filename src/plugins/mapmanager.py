@@ -17,6 +17,8 @@ class mapmanager(pyseco_plugin):
         self.register_chat_command("remove")
         self.register_callback("TrackMania.ChallengeListModified")
 
+        self.allow_save_matchsettings = True
+
         self.initialize()
 
     def initialize(self):
@@ -28,9 +30,13 @@ class mapmanager(pyseco_plugin):
         response = self.pyseco.query((self.config_path, ), "LoadMatchSettings")
         if isinstance(response, Fault):
             self.error_log("Could not load MatchSettings: %s" % self.config_path)
+            self.console_log("Saving MatchSettings disabled")
+            self.allow_save_matchsettings = False
             self.save_matchsettings()
 
     def save_matchsettings(self):
+        if not self.allow_save_matchsettings:
+            return
         self.console_log("Saving current MatchSettings as %s" % self.config_path)
         self.pyseco.query((self.config_path, ), "SaveMatchSettings")
 

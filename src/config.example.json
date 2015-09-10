@@ -11,7 +11,8 @@
     {"name":"playermanager","settings":{}},
     {"name":"livecps","settings":{}},
     {"name":"manialink","settings":{}},
-    {"name":"records","settings":{}}
+    {"name":"records","settings":{}},
+    {"name":"recordsgui","settings":{}}
 ],
 "mysql":{
     "host":"localhost",

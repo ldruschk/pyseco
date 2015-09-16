@@ -68,5 +68,3 @@ class mapinfo(pyseco_plugin):
             response = self.pyseco.query((xml, 0, False), "SendDisplayManialinkPage")
         else:
             response = self.pyseco.query((login, xml, 0, False), "SendDisplayManialinkPageToLogin")
-
-        self.pyseco.send_chat_message(str(info))

@@ -139,7 +139,6 @@ class PySECO_DB():
                 SELECT time FROM record
                 WHERE pid = %s AND mid = %s LIMIT 1""",
                 (pid, mid))
-        self.pyseco.db_lock.release()
         data = cur.fetchone()
         cur.close()
         self.conn.commit()
@@ -149,6 +148,46 @@ class PySECO_DB():
             return None
         else:
             return data[0]
+
+    def get_record_by_login(self, mid, login):
+        self.pyseco.db_lock.acquire()
+        cur = self.conn.cursor()
+        cur.execute("""
+                SELECT time FROM record, player
+                WHERE record.pid = player.id
+                    AND mid = %s
+                    AND player.login = %s
+                    LIMIT 1""",
+                (mid, login))
+        data = cur.fetchone()
+        cur.close()
+        self.conn.commit()
+        self.pyseco.db_lock.release()
+
+        if data is None:
+            return None
+        else:
+            return data[0]
+
+    def get_cp_times(self, mid, login):
+        self.pyseco.db_lock.acquire()
+        cur = self.conn.cursor()
+        cur.execute("""
+                SELECT cpnum, time FROM player, cp
+                WHERE cp.pid = player.id
+                    AND mid = %s
+                    AND player.login = %s
+                ORDER BY cpnum ASC""",
+                (mid, login))
+        data = cur.fetchall()
+        cur.close()
+        self.conn.commit()
+        self.pyseco.db_lock.release()
+
+        if data is None:
+            return None
+        else:
+            return data
 
     def get_record_list(self, mid, login):
         self.pyseco.db_lock.acquire()
@@ -250,7 +289,6 @@ class PySECO_DB():
                 WHERE mid = %s AND pid = player.id AND login = %s LIMIT 1""",
                 (mid, login, mid, login))
         data = cur.fetchone()
-        print(data)
         if data is None:
             prev_rank = None
             prev_time = None

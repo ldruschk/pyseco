@@ -21,7 +21,8 @@
     {"name":"records","settings":{}},
     {"name":"recordsgui","settings":{}},
     {"name":"mapmanager","settings":{}},
-    {"name":"mapinfo","settings":{}}
+    {"name":"mapinfo","settings":{}},
+    {"name":"cpdiff","settings":{}}
 ],
 "mysql":{
     "host":"localhost",

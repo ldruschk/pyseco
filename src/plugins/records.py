@@ -84,15 +84,18 @@ class records(pyseco_plugin):
             self.new_map(value[0][0])
 
     def process_finish(self, newtime, ranking):
+        #print(ranking)
         login = ranking["Login"]
         player = self.pyseco.get_player(login)
         nick_name = player.get_nick_name()
         rec_time = ranking["BestTime"]
+        cp_times = ranking["BestCheckpoints"]
         if newtime > rec_time:
             return
         (prev_rank, prev_time, new_rank, new_time) = self.db.handle_record(
                                                      self.map_id, login,
-                                                     rec_time, int(time.time()))
+                                                     rec_time, int(time.time()),
+                                                     cp_times[:-1])
         tuple_ = (prev_rank, prev_time, new_rank, new_time)
 
         # new time is worse than the record in the db

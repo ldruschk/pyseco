@@ -64,6 +64,22 @@ class PySECO_DB():
                             ON UPDATE CASCADE ON DELETE CASCADE)""")
             except pymysql.err.Warning as e:
                 pass
+            try:
+                cur.execute("""
+                CREATE TABLE IF NOT EXISTS cp
+                (pid INT UNSIGNED NOT NULL,
+                mid INT UNSIGNED NOT NULL,
+                cpnum INT UNSIGNED NOT NULL,
+                time INT UNSIGNED NOT NULL,
+                PRIMARY KEY(pid, mid, cpnum),
+                CONSTRAINT fk_playerCp FOREIGN KEY (pid)
+                    REFERENCES player(id)
+                    ON UPDATE CASCADE ON DELETE CASCADE,
+                CONSTRAINT fk_mapCp FOREIGN KEY (mid)
+                    REFERENCES map(id)
+                    ON UPDATE CASCADE ON DELETE CASCADE)""")
+            except pymysql.err.Warning as e:
+                pass
         cur.close()
         self.conn.commit()
         self.pyseco.db_lock.release()
@@ -211,7 +227,7 @@ class PySECO_DB():
 
     # returns 0 if new record was created
     # returns previous record else
-    def handle_record(self, mid, login, time, timestamp):
+    def handle_record(self, mid, login, time, timestamp, cps):
         retval = -1
 
         self.pyseco.db_lock.acquire()
@@ -244,6 +260,17 @@ class PySECO_DB():
                         (SELECT id FROM player WHERE login = %s LIMIT 1),
                         %s, %s)""",
                     (mid, login, time, timestamp))
+            i = 0
+            for cp_time in cps:
+                cur.execute("""
+                        INSERT INTO cp (mid,pid,cpnum,time)
+                        VALUES (%s,
+                            (SELECT id FROM player WHERE login = %s LIMIT 1),
+                            %s, %s)
+                        ON DUPLICATE KEY UPDATE time = %s
+                        """,
+                        (mid, login, i, cp_time, cp_time))
+                i += 1
             new_time = time
         elif time < data[1]:
             prev_rank = data[0]
@@ -256,6 +283,17 @@ class PySECO_DB():
                     AND pid = (SELECT id FROM player WHERE login = %s LIMIT 1)
                     LIMIT 1""",
                     (time, timestamp, mid, login))
+            i = 0
+            for cp_time in cps:
+                cur.execute("""
+                        INSERT INTO cp (mid,pid,cpnum,time)
+                        VALUES (%s,
+                            (SELECT id FROM player WHERE login = %s LIMIT 1),
+                            %s, %s)
+                        ON DUPLICATE KEY UPDATE time = %s
+                        """,
+                        (mid, login, i, cp_time, cp_time))
+                i += 1
             new_time = time
         else:
             prev_rank = data[0]

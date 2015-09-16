@@ -18,6 +18,7 @@ class mapinfo(pyseco_plugin):
         self.register_callback("TrackMania.BeginChallenge")
         self.register_callback("TrackMania.EndChallenge")
         self.register_callback("TrackMania.StatusChanged")
+        self.register_callback("TrackMania.PlayerConnect")
 
         self.initialize()
 
@@ -29,9 +30,12 @@ class mapinfo(pyseco_plugin):
         if value[1] == "TrackMania.BeginChallenge":
             response = self.pyseco.query((), "GetCurrentMapInfo")
             self.show_current_info(response[0][0])
+        elif value[1] == "TrackMania.PlayerConnect":
+            response = self.pyseco.query((), "GetCurrentMapInfo")
+            self.show_current_info(response[0][0], login=value[0][0])
 
 
-    def show_current_info(self, info):
+    def show_current_info(self, info, login=None):
         name = info["Name"].replace("'","&apos;")
         author = info["Author"].replace("'","&apos;")
         time = info["AuthorTime"]
@@ -44,7 +48,9 @@ class mapinfo(pyseco_plugin):
             1, -3.25, 0, 13, 1, 1, author,
             1, -5, 0, 13, 1, 1, timestr
         )
-        response = self.pyseco.query((xml, 0, False), "SendDisplayManialinkPage")
-        print(response)
+        if login is None:
+            response = self.pyseco.query((xml, 0, False), "SendDisplayManialinkPage")
+        else:
+            response = self.pyseco.query((login, xml, 0, False), "SendDisplayManialinkPageToLogin")
 
         self.pyseco.send_chat_message(str(info))

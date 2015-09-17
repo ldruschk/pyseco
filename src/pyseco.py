@@ -156,8 +156,11 @@ class PySECO(GBX2xmlrpc):
         self.server_login = system_info[0][0]['ServerLogin']
         server_options = self.query((), "GetServerOptions")
 
-    def send_chat_message(self, message):
-        self.send((message, ), "ChatSendServerMessage")
+    def send_chat_message(self, message, login=None):
+        if login is None:
+            self.send((message, ), "ChatSendServerMessage")
+        else:
+            self.send((message, login), "ChatSendServerMessageToLogin")
 
     def load_config(self, config_file):
         try:

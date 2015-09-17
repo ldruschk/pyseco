@@ -18,7 +18,7 @@ class mapinfo(pyseco_plugin):
     def __init__(self, pyseco):
         pyseco_plugin.__init__(self, pyseco)
         self.register_callback("TrackMania.BeginChallenge")
-        self.register_callback("TrackMania.EndRound")
+        self.register_callback("pyseco.mapmanager.EndRound")
         self.register_callback("TrackMania.PlayerConnect")
 
         self.initialize()
@@ -40,7 +40,7 @@ class mapinfo(pyseco_plugin):
             else:
                 response = self.pyseco.query((), "GetNextMapInfo")
                 self.show_current_info(response[0][0], login=value[0][0], next_=True)
-        elif value[1] == "TrackMania.EndRound":
+        elif value[1] == "pyseco.mapmanager.EndRound":
             self.ingame = False
             response = self.pyseco.query((), "GetNextMapInfo")
             self.show_current_info(response[0][0], next_=True)

@@ -39,7 +39,7 @@ class GBX2xmlrpc():
             return False
 
     def send(self, params, methodName):
-        brequest = dumps(params, methodname=methodName).encode()
+        brequest = dumps(params, methodname=methodName, allow_none=True).encode()
         blength = len(brequest).to_bytes(4, byteorder='little')
         handler = self.handler
         self.handler += 1

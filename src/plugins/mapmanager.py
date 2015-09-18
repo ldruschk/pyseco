@@ -12,6 +12,25 @@ class DownloadError(Exception):
 
 
 class mapmanager(pyseco_plugin):
+    list_manialink_button = """<quad posn='%f %f %f' sizen='%f %f'
+                style='%s' substyle='%s' action='%s'/>"""
+
+    list_manialink = """<manialink id='%s'>
+    <frame posn='%f %f %f'>
+        <quad posn='%f %f %f' sizen='%f %f' style='%s' substyle='%s'/>
+        <quad posn='%f %f %f' sizen='%f %f' style='%s' substyle='%s'/>
+        <label posn='%f %f %f' sizen='%f %f' textsize='%f' text='%s'/>
+        %s
+    </frame>
+</manialink>"""
+
+    list_manialink_entry = """<frame posn='%f %f %f'>
+    <quad posn='%f %f %f' sizen='%f %f' style='%s' substyle='%s' action='%s'/>
+    <label posn='%f %f %f' sizen='%f %f' textsize='%f' text='%s' halign="right"/>
+    <label posn='%f %f %f' sizen='%f %f' textsize='%f' text='%s'/>
+    <label posn='%f %f %f' sizen='%f %f' textsize='%f' text='%s'/>
+</frame>"""
+
     def __init__(self, pyseco):
         pyseco_plugin.__init__(self, pyseco, db=True)
         self.register_chat_command("add")
@@ -20,8 +39,11 @@ class mapmanager(pyseco_plugin):
         self.register_chat_command("drop")
         self.register_chat_command("restart")
         self.register_chat_command("next")
+        self.register_chat_command("list")
+
         self.register_callback("TrackMania.ChallengeListModified")
         self.register_callback("TrackMania.EndRound")
+        self.register_callback("TrackMania.PlayerManialinkPageAnswer")
 
         self.chat_color = "$0a0"
 
@@ -67,13 +89,97 @@ class mapmanager(pyseco_plugin):
                 self.pyseco.send_chat_message("$i$fff>> %sThe next map will be "
                         "$z%s" % (self.chat_color, map_name))
             self.pyseco.notify_callback_listeners(cb_tup)
+        elif value[1] == "TrackMania.PlayerManialinkPageAnswer":
+            login = value[0][1]
+            code = value[0][2]
+            if code.startswith("mapmanager_"):
+                if code == "mapmanager_hidelist":
+                    self.hide_list(login)
+                elif code.startswith("mapmanager_queue_"):
+                    map_id = int(code.replace("mapmanager_queue_",""))
+                    (admin, mod) = self.pyseco.get_permission(login)
+                    self.queue_map(map_id, login, admin or mod)
+                elif code.startswith("mapmanager_list_"):
+                    map_id = int(code.replace("mapmanager_list_",""))
+                    self.list(login, start=map_id)
+
+    def hide_list(self, login):
+        xml = "<manialink id='mapmanager_list'/>"
+
+        self.pyseco.query((login, xml, 0, False), "SendDisplayManialinkPageToLogin")
+
+    def list(self, login, start=1):
+        result = self.pyseco.query((161, start-1), "GetMapList")
+        if isinstance(result, Fault):
+            self.error_log("Failed to list maps, login: %s, start: %d" % (login,start))
+            self.pyseco.send_chat_message("$i$fff> $f00Could not open map list!",
+                                          login=login)
+            return
+
+        map_list = result[0][0]
+
+        entry_xml = ""
+
+        i = 0
+        for map_ in map_list:
+            if i >= 15:
+                break
+            map_id = i + start
+            map_name = map_["Name"].replace("'","&quot;")
+            map_author = map_["Author"].replace("'","&quot;")
+
+            action = "mapmanager_queue_%d" % map_id
+
+            xml = self.list_manialink_entry % (1, -3.5 - i * 2.5, 0,
+                2.5, -0.25, 1, 24, 2, "BgsPlayerCard", "BgCardSystem", action,
+                2, -0.75, 2, 2, 1, 1, str(map_id),
+                3, -0.75, 2, 23, 1, 1, map_name,
+                27.5, -0.75, 2, 12, 1, 1, map_author
+            )
+            entry_xml += xml
+            i += 1
+
+        # Close button
+        xml = self.list_manialink_button % (
+            18.5, -41.5, 1, 3, 3, "Icons64x64_1", "Close", "mapmanager_hidelist"
+        )
+        entry_xml += xml
+
+        # Previous button
+        if start > 1:
+            prev_id = max(start - 15, 1)
+            action = "mapmanager_list_%d" % prev_id
+            xml = self.list_manialink_button % (
+                15.5, -41.5, 1, 3, 3, "Icons64x64_1", "ArrowPrev", action
+            )
+            entry_xml += xml
+
+        # Next button
+        if len(map_list) > 15:
+            next_id = start + 15
+            action = "mapmanager_list_%d" % next_id
+            xml = self.list_manialink_button % (
+                21.5, -41.5, 1, 3, 3, "Icons64x64_1", "ArrowNext", action
+            )
+            entry_xml += xml
+
+        xml = self.list_manialink % ("mapmanager_list", -20, 22.5, 16,
+            0, 0, 0, 40, 45, "Bgs1", "BgList",
+            0.5, -1, 1, 2, 2, "Icons128x128_1", "Browse",
+            3, -1, 1, 36.5, 2, 2, "$fff$i$sMap List",
+            entry_xml
+        )
+
+        self.pyseco.add_manialink("mapmanager_list", ingame=True)
+
+        self.pyseco.query((login, xml, 0, False), "SendDisplayManialinkPageToLogin")
 
     def select_next(self):
         if not self.map_queue:
             return None
 
         tup = self.map_queue.popleft()
-        print(self.pyseco.query((tup[0], ), "ChooseNextMap"))
+        self.pyseco.query((tup[0], ), "ChooseNextMap")
         return tup[2]
 
     def queue_map(self, id_, login, permission):
@@ -108,7 +214,7 @@ class mapmanager(pyseco_plugin):
 
     def drop_map(self, login):
         before = len(self.map_queue)
-        self.map_queue = [x for x in self.map_queue if not x[1] == login]
+        self.map_queue = collections.deque([x for x in self.map_queue if not x[1] == login])
         if len(self.map_queue) != before:
             self.pyseco.send_chat_message("$i$fff> %sDropped map(s) from queue."
                                           % self.chat_color,
@@ -198,3 +304,8 @@ class mapmanager(pyseco_plugin):
         elif command == "next" and (admin or mod):
             if len(params) == 0:
                 self.next(login)
+        elif command == "list":
+            if len(params) == 0:
+                self.list(login)
+            elif len(params) == 1:
+                self.list(login, start=int(params[0]))
